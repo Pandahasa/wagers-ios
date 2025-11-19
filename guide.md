@@ -18,7 +18,7 @@ The system comprises five core components:
 
 1.1 Phase 1: Project Setup (iOS - Xcode)
 
-The foundation of the iOS application begins with the Xcode project configuration
+The foundation of the iOS application begins with the Xcode project configuration.
 
     Create Project: Launch Xcode and create a new project.
 
