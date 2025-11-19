@@ -1,0 +1,27 @@
+{
+  "name": "doyourwork-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+  "reset-db": "bash scripts/reset_db.sh",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+  "multer": "^1.4.5-lts.1",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.15.3",
+    "node-apn": "^3.0.0",
+    "stripe": "^19.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
