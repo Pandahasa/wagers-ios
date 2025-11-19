@@ -1,0 +1,1 @@
+CREATE DATABASE doyourwork_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER 'doyourwork_user'@'localhost' IDENTIFIED BY 'secure_password'; GRANT ALL PRIVILEGES ON doyourwork_db.* TO 'doyourwork_user'@'localhost'; FLUSH PRIVILEGES;

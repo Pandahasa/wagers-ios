@@ -1,0 +1,176 @@
+[dotenv@17.2.3] injecting env (14) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+Server running on port 3000
+POST /api/users/register
+Starting registration for: new@example.com
+Username already taken
+POST /api/users/register
+Starting registration for: test@example.com
+Email already used
+POST /api/users/login
+Login attempt for: nonexistent
+User not found
+POST /api/users/login
+Login attempt for: testuser
+User found: testuser
+Password invalid
+POST /api/users/login
+Login attempt for: testuser
+User found: testuser
+Password valid, generating token
+Login successful
+POST /api/users/register
+Starting registration for: nice@gmail.com
+Password hashed
+Creating Stripe customer...
+Stripe customer created: cus_TRIOLRbb7vKtZo
+User inserted into DB, insertId: 24
+Sending response
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/register
+Starting registration for: 123@gmail.com
+Password hashed
+Creating Stripe customer...
+Stripe customer created: cus_TRIPuPM25TrdKV
+User inserted into DB, insertId: 25
+Sending response
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/register
+Starting registration for: what
+Password hashed
+Creating Stripe customer...
+Registration error: Invalid email address: what
+POST /api/users/register
+Starting registration for: what@gmail.com
+Password hashed
+Creating Stripe customer...
+Stripe customer created: cus_TRIPogdJ5RlkfC
+User inserted into DB, insertId: 26
+Sending response
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: undefined
+Login error: Bind parameters must not contain undefined. To pass SQL NULL specify JS null
+POST /api/users/login
+Login attempt for: nice
+User found: Nice
+Password valid, generating token
+Login successful
+POST /api/users/login
+Login attempt for: ni
+User not found
+POST /api/users/login
+Login attempt for: nice
+User found: Nice
+Password invalid
+POST /api/users/login
+Login attempt for: nice@gmail.com
+User found: Nice
+Password valid, generating token
+Login successful
+POST /api/users/register
+Starting registration for: ni
+Username already taken
+POST /api/users/register
+Starting registration for: nice@gmail.com
+Email already used
+POST /api/users/register
+Starting registration for: nice@gmail.com
+Username already taken
+POST /api/users/register
+Starting registration for: nicee@gmail.com
+Password hashed
+Creating Stripe customer...
+Stripe customer created: cus_TRITKUWRX4Gl3v
+User inserted into DB, insertId: 27
+Sending response
+POST /api/users/register
+Starting registration for: t
+Password hashed
+Creating Stripe customer...
+Registration error: Invalid email address: t
+POST /api/users/register
+Starting registration for: t@gmail.com
+Password hashed
+Creating Stripe customer...
+Stripe customer created: cus_TRcT02zVx7uHum
+User inserted into DB, insertId: 28
+Sending response
+GET /api/wagers/active
+POST /api/users/register
+Starting registration for: test@example.com
+Username already taken
+POST /api/users/login
+Login attempt for: test@example.com
+User found: testuser
+Password valid, generating token
+Login successful
+GET /api/wagers/active
+GET /api/wagers/pending
+POST /api/wagers/create
+POST /api/users/register
+Starting registration for: test@example.com
+Username already taken
+POST /api/wagers/create
