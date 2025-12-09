@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 class MyWagersViewModel: ObservableObject {
     @Published var wagers: [Wager] = []
     @Published var isLoading = false

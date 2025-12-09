@@ -3,7 +3,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const createWager = async (req, res) => {
     const { task_description, wager_amount, deadline, referee_id } = req.body;
-    // Use authenticated user id as the pledger
+    //Use authenticated user id as the pledger
     const pledger_id = req.user && req.user.id ? req.user.id : null;
     if (!pledger_id) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -15,15 +15,10 @@ const createWager = async (req, res) => {
     try {
         console.log('Creating wager for user:', pledger_id);
 
-        // Convert ISO datetime to MySQL DATETIME string in UTC.
-        // Using toISOString() and trimming to "YYYY-MM-DD HH:mm:ss" ensures
-        // we pass an unambiguous UTC datetime string. Setting `timezone: 'Z'`
-        // in the database pool config prevents MySQL from applying an extra
-        // local-to-UTC conversion for TIMESTAMP columns.
+        //ISO datetime to MySQL DATETIME string in UTC
         const deadlineDate = new Date(deadline);
-        const mysqlDeadline = deadlineDate.toISOString().slice(0, 19).replace('T', ' '); // 2025-11-20 18:00:00
+        const mysqlDeadline = deadlineDate.toISOString().slice(0, 19).replace('T', ' '); //2025-11-20 18:00:00
 
-        // Ensure pledger has a stripe customer id
         const [userRows] = await db.execute('SELECT stripe_customer_id FROM Users WHERE id = ?', [pledger_id]);
         if (userRows.length === 0 || !userRows[0].stripe_customer_id) {
             return res.status(400).json({ error: 'Pledger has no Stripe customer ID' });
@@ -31,12 +26,15 @@ const createWager = async (req, res) => {
 
         const stripeCustomerId = userRows[0].stripe_customer_id;
 
-        // Create a PaymentIntent (manual capture) and then create the wager in a DB transaction
         paymentIntent = await stripe.paymentIntents.create({
             amount: Math.round(wager_amount * 100), // cents
             currency: 'usd',
             customer: stripeCustomerId,
-            capture_method: 'manual'
+            capture_method: 'manual',
+            automatic_payment_methods: {
+                enabled: true,
+                allow_redirects: 'never'
+            }
         });
 
         connection = await db.getConnection();
@@ -54,6 +52,7 @@ const createWager = async (req, res) => {
         res.json({
             wager_id: result.insertId,
             client_secret: paymentIntent.client_secret,
+            payment_intent_id: paymentIntent.id,
             message: 'Wager created successfully'
         });
 
@@ -144,6 +143,8 @@ const verifyWager = async (req, res) => {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    console.log(`Verifying wager ${wagerId} with outcome: ${outcome}`);
+
     try {
         // Get wager details
         const [wagerRows] = await db.execute('SELECT * FROM Wagers WHERE id = ?', [wagerId]);
@@ -152,37 +153,65 @@ const verifyWager = async (req, res) => {
         }
 
         const wager = wagerRows[0];
+        console.log(`Wager found:`, wager);
 
         // Check if user is the referee
         if (String(wager.referee_id) !== String(userId)) {
             return res.status(403).json({ error: 'Forbidden: You are not the referee for this wager' });
         }
 
+        // Check if wager is already processed
+        if (wager.status !== 'verifying') {
+            console.log(`Wager ${wagerId} already processed with status: ${wager.status}`);
+            return res.json({ message: `Wager already processed as ${wager.status}` });
+        }
+
         if (outcome === 'success') {
+            console.log(`Cancelling payment intent: ${wager.stripe_payment_intent_id}`);
             // Cancel the payment intent (release the hold)
             await stripe.paymentIntents.cancel(wager.stripe_payment_intent_id);
 
             // Update wager status
             await db.execute('UPDATE Wagers SET status = \'completed_success\' WHERE id = ?', [wagerId]);
 
+            // Increment the pledger's success counter
+            await db.execute('UPDATE Users SET successful_wagers_count = successful_wagers_count + 1 WHERE id = ?', [wager.pledger_id]);
+
+            console.log(`Wager ${wagerId} marked as successful, incremented success count for user ${wager.pledger_id}`);
             res.json({ message: 'Wager marked as successful' });
 
         } else if (outcome === 'failure') {
+            console.log(`Capturing payment intent: ${wager.stripe_payment_intent_id}`);
             // Capture the payment (charge the pledger)
             const paymentIntent = await stripe.paymentIntents.capture(wager.stripe_payment_intent_id);
+            console.log(`Payment captured:`, paymentIntent.id);
 
             // Get referee's stripe connect account
             const [refereeRows] = await db.execute('SELECT stripe_connect_id FROM Users WHERE id = ?', [wager.referee_id]);
             const referee = refereeRows[0];
+            console.log(`Referee stripe_connect_id:`, referee.stripe_connect_id);
 
             if (referee.stripe_connect_id) {
+                console.log(`Creating transfer for ${wager.wager_amount} to ${referee.stripe_connect_id}`);
+                
+                // Get the charge ID from the latest_charge field
+                const chargeId = paymentIntent.latest_charge || (paymentIntent.charges?.data?.[0]?.id);
+                
+                if (!chargeId) {
+                    throw new Error('No charge ID found on payment intent');
+                }
+                
+                console.log(`Using charge ID: ${chargeId}`);
+                
                 // Transfer funds to referee
                 const transfer = await stripe.transfers.create({
                     amount: Math.round(wager.wager_amount * 100),
                     currency: 'usd',
                     destination: referee.stripe_connect_id,
-                    source_transaction: paymentIntent.charges.data[0].id,
+                    source_transaction: chargeId,
                 });
+
+                console.log(`Transfer created:`, transfer.id);
 
                 // Update wager with transfer ID and mark as complete
                 await db.execute(
@@ -190,10 +219,12 @@ const verifyWager = async (req, res) => {
                     [transfer.id, wagerId]
                 );
             } else {
+                console.log(`Referee not onboarded, marking as completed_failure`);
                 // Referee not onboarded, just mark as completed_failure
                 await db.execute('UPDATE Wagers SET status = \'completed_failure\' WHERE id = ?', [wagerId]);
             }
 
+            console.log(`Wager ${wagerId} marked as failed and payment processed`);
             res.json({ message: 'Wager marked as failed and payment processed' });
 
         } else {
@@ -201,7 +232,8 @@ const verifyWager = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('Verify wager error:', error.message);
+        console.error('Verify wager error:', error);
+        console.error('Error stack:', error.stack);
         res.status(500).json({ error: 'Failed to verify wager' });
     }
 };
@@ -228,12 +260,15 @@ const uploadProof = async (req, res) => {
         }
 
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    console.log('Uploaded file:', req.file.originalname, 'size:', req.file.size);
 
         // Build file URL reachable by clients
         const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
 
         // Update wager row - set proof_image_url and move state to 'verifying'
         await db.execute('UPDATE Wagers SET proof_image_url = ?, status = ? WHERE id = ?', [fileUrl, 'verifying', wagerId]);
+
+    console.log('Proof uploaded for wager:', wagerId, 'fileUrl:', fileUrl);
 
         res.json({ message: 'Proof uploaded', proof_url: fileUrl });
 
@@ -244,3 +279,45 @@ const uploadProof = async (req, res) => {
 };
 
 module.exports.uploadProof = uploadProof;
+
+// Confirm payment for a wager (backend handles payment method creation)
+const confirmPayment = async (req, res) => {
+    const { payment_intent_id } = req.body;
+    const userId = req.user && req.user.id ? req.user.id : null;
+    if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+        console.log('Confirming payment:', payment_intent_id);
+
+        // Create a test payment method using server-side API
+        const paymentMethod = await stripe.paymentMethods.create({
+            type: 'card',
+            card: {
+                token: 'tok_visa', // Stripe's test token
+            },
+        });
+
+        console.log('Created payment method:', paymentMethod.id);
+
+        // Confirm the payment intent with the payment method
+        const confirmedIntent = await stripe.paymentIntents.confirm(payment_intent_id, {
+            payment_method: paymentMethod.id,
+        });
+
+        console.log('Payment confirmed, status:', confirmedIntent.status);
+
+        res.json({
+            success: true,
+            status: confirmedIntent.status,
+            payment_intent_id: confirmedIntent.id
+        });
+
+    } catch (error) {
+        console.error('Confirm payment error:', error);
+        res.status(500).json({ error: 'Failed to confirm payment', details: error.message });
+    }
+};
+
+module.exports.confirmPayment = confirmPayment;

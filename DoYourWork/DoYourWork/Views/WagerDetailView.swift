@@ -164,7 +164,18 @@ struct WagerDetailView: View {
                                 print("Starting upload for wager id: \(wager.id)")
                                 do {
                                     let filename = "proof_\(wager.id).jpg"
-                                    let resp = try await NetworkService.shared.uploadProof(wagerId: wager.id, imageData: data, filename: filename)
+                                    // Ensure we don't upload an excessively large image - compress if needed
+                                    var uploadData = data
+                                    if uploadData.count > 4_700_000 { // ~4.7 MB
+                                        if let image = UIImage(data: uploadData), let compressed = image.jpegData(compressionQuality: 0.6) {
+                                            print("Compressing image from \(uploadData.count) to \(compressed.count) bytes")
+                                            uploadData = compressed
+                                        } else {
+                                            print("Failed to compress image; proceeding with original size: \(uploadData.count)")
+                                        }
+                                    }
+
+                                    let resp = try await NetworkService.shared.uploadProof(wagerId: wager.id, imageData: uploadData, filename: filename)
                                     await MainActor.run {
                                         isUploading = false
                                         uploadMessage = resp.message

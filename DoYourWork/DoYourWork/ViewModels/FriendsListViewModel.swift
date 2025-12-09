@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 class FriendsListViewModel: ObservableObject {
     @Published var friends: [User] = []
     @Published var pending: [PendingRequest] = []

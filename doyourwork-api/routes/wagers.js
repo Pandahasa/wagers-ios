@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createWager, getActiveWagers, getPendingWagers, verifyWager, uploadProof } = require('../controllers/wagers');
+const { createWager, getActiveWagers, getPendingWagers, verifyWager, uploadProof, confirmPayment } = require('../controllers/wagers');
 const multer = require('multer');
 const path = require('path');
 
@@ -19,6 +19,7 @@ const auth = require('../middleware/auth');
 
 // Protected routes
 router.post('/create', auth, createWager);
+router.post('/confirm-payment', auth, confirmPayment);
 router.get('/active', auth, getActiveWagers);
 router.get('/pending', auth, getPendingWagers);
 router.post('/:id/verify', auth, verifyWager);

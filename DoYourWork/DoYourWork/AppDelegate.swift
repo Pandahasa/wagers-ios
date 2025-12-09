@@ -21,8 +21,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
         print("APNs Device Token: \(tokenString)")
         
-        // TODO: Send to backend via NetworkService (we'll implement this)
-        // Task { await NetworkService.shared.postDeviceToken(tokenString) }
+        // Send to backend via NetworkService
+        Task {
+            do {
+                let response = try await NetworkService.shared.postDeviceToken(tokenString)
+                print("Device token posted: \(response)")
+            } catch {
+                print("Failed to post device token: \(error.localizedDescription)")
+            }
+        }
     }
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {

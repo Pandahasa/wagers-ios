@@ -252,18 +252,24 @@ struct VerifyWagerView: View {
                 let _ = try await NetworkService.shared.verifyWager(wagerId: wager.id, outcome: outcome)
                 await MainActor.run {
                     isVerifying = false
+                    // Just complete without showing any alert
                     onVerificationComplete(success)
-                    if success {
-                        showingSuccessAlert = true
-                    } else {
-                        showingFailureAlert = true
-                    }
                 }
             } catch {
+                // Only show error if it's a real error, not a duplicate request
+                let errorMessage = error.localizedDescription.lowercased()
+                let isDuplicateRequest = errorMessage.contains("already") || errorMessage.contains("processed")
+                
                 await MainActor.run {
                     isVerifying = false
-                    verificationError = "Verification failed: \(error.localizedDescription)"
-                    showingFailureAlert = true
+                    if isDuplicateRequest {
+                        // Silently succeed - wager was already processed
+                        onVerificationComplete(success)
+                    } else {
+                        // Real error - show to user
+                        verificationError = "Verification failed: \(error.localizedDescription)"
+                        showingFailureAlert = true
+                    }
                 }
             }
         }

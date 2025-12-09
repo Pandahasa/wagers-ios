@@ -114,4 +114,35 @@ const searchUsers = async (req, res) => {
     }
 };
 
-module.exports = { register, login, updateDeviceToken, searchUsers };
+const getUserStats = async (req, res) => {
+    const userId = req.user && req.user.id ? req.user.id : null;
+    if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+        const [rows] = await db.execute(
+            'SELECT id, username, email, successful_wagers_count FROM Users WHERE id = ?',
+            [userId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const user = rows[0];
+        res.json({
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                successful_wagers_count: user.successful_wagers_count || 0
+            }
+        });
+    } catch (error) {
+        console.error('Get user stats error:', error.message);
+        res.status(500).json({ error: 'Failed to fetch user stats' });
+    }
+};
+
+module.exports = { register, login, updateDeviceToken, searchUsers, getUserStats };

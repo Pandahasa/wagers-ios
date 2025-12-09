@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 class ToVerifyViewModel: ObservableObject {
     @Published var wagers: [Wager] = []
     @Published var isLoading = false

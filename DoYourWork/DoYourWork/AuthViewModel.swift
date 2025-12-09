@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 class AuthViewModel: ObservableObject {
     @Published var identifier = ""
     @Published var email = ""  // For registration

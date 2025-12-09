@@ -18,9 +18,9 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/users', require('./routes/users'));
-// TODO: Add other routes
 app.use('/api/friends', require('./routes/friends'));
 app.use('/api/wagers', require('./routes/wagers'));
+app.use('/api/stripe', require('./routes/stripe'));
 
 // Ensure uploads folder exists
 const fs = require('fs');
@@ -35,4 +35,13 @@ app.get('/test', (req, res) => res.json({ message: 'Server is running' }));
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port 3000`);
+});
+
+// Global error handler (including multer errors like LIMIT_FILE_SIZE)
+app.use((err, req, res, next) => {
+    console.error('Global error handler:', err && err.message ? err.message : err);
+    if (err && err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ error: 'File too large' });
+    }
+    res.status(500).json({ error: 'Server error' });
 });

@@ -1,6 +1,7 @@
 import SwiftUI
 
-class CreateWagerViewModel: ObservableObject {
+/// Alternative CreateWagerViewModel that uses StripeAPIService (no SDK required)
+class CreateWagerViewModelAlt: ObservableObject {
     @Published var taskDescription = ""
     @Published var wagerAmount = ""
     @Published var deadline = Date().addingTimeInterval(86400) // Tomorrow
@@ -40,10 +41,10 @@ class CreateWagerViewModel: ObservableObject {
 
         do {
             // Convert the selected deadline to UTC before sending
-            // Use ISO8601 with fractional seconds to match server formatting
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
             let deadlineString = formatter.string(from: deadline)
+            
             let response = try await NetworkService.shared.createWager(
                 taskDescription: taskDescription,
                 wagerAmount: amount,
@@ -51,25 +52,11 @@ class CreateWagerViewModel: ObservableObject {
                 refereeId: refereeId
             )
             
-            // Confirm the payment with Stripe via backend (backend handles test card)
-            print("Confirming payment via backend...")
+            // Confirm the payment with Stripe using the API service (no SDK needed)
+            print("Confirming payment with Stripe API...")
+            let paymentConfirmed = try await StripeAPIService.shared.confirmPayment(clientSecret: response.client_secret)
             
-            // Extract payment intent ID from response
-            let paymentIntentId = response.client_secret.components(separatedBy: "_secret_")[0]
-            
-            struct ConfirmPaymentRequest: Codable {
-                let payment_intent_id: String
-            }
-            
-            struct ConfirmPaymentResponse: Codable {
-                let success: Bool
-                let status: String
-            }
-            
-            let confirmRequest = ConfirmPaymentRequest(payment_intent_id: paymentIntentId)
-            let confirmResponse: ConfirmPaymentResponse = try await NetworkService.shared.makeRequest("/wagers/confirm-payment", method: "POST", body: confirmRequest)
-            
-            if confirmResponse.success {
+            if paymentConfirmed {
                 await MainActor.run {
                     self.successMessage = "Wager created and payment authorized!"
                     self.isLoading = false
@@ -80,7 +67,7 @@ class CreateWagerViewModel: ObservableObject {
                     self.selectedFriendId = nil
                 }
             } else {
-                throw NSError(domain: "Payment", code: -1, userInfo: [NSLocalizedDescriptionKey: "Payment confirmation failed"])
+                throw NSError(domain: "StripeAPIService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Payment confirmation failed"])
             }
 
         } catch {
